@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: service.distance_calculator.ConverterMapTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.025 s - in service.distance_calculator.ConverterMapTest

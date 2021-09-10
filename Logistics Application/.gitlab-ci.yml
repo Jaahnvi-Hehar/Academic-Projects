@@ -1,0 +1,75 @@
+stages:
+    - build
+    - test
+    - deploy_develop
+    - deploy_release
+
+build:
+    stage: build
+    image: maven:latest
+    script:
+        - echo "Building the pipeline"
+        - mvn clean package
+    artifacts:
+        paths:
+        - target
+    tags:
+        - ugrad
+   
+test:
+    stage: test
+    image: maven:latest
+    artifacts:
+      when: always
+      reports:
+        junit:
+          - target/surefire-reports/TEST-*.xml
+
+    script:
+        - echo "Testing the pipeline "
+        - mvn verify
+    tags:
+        - ugrad
+        
+        
+deploy_develop:
+    stage: deploy_develop
+    tags:
+        - ugrad
+    artifacts:
+        paths:
+        - target
+    script:
+        - echo "Deploying the development pipeline"
+        - chmod og-rwx ${DEPLOY_SSH_KEY}
+        - export DB_HOST=${DB_HOSTNAME}
+        - export DB_PORT=${DB_PORT}
+        - export DB_NAME=${DB_DEV_NAME}
+        - export DB_USERNAME=${DB_DEV_USER}
+        - export DB_PASSWORD=${DB_DEV_PASSWORD}
+        - zip -r ${CI_COMMIT_SHORT_SHA}.zip target
+        - scp -r -o StrictHostKeyChecking=no -i "${DEPLOY_SSH_KEY}" ${CI_COMMIT_SHORT_SHA}.zip "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/${CI_PROJECT_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}.zip"
+    only:
+        - develop
+
+
+deploy_release:
+    stage: deploy_release
+    tags:
+        - ugrad
+    artifacts:
+        paths:
+            - target
+    script:
+        - echo "Deploying the release pipeline"
+        - chmod og-rwx ${DEPLOY_SSH_KEY}
+        - export DB_HOST=${DB_HOSTNAME}
+        - export DB_PORT=${DB_PORT}
+        - export DB_NAME=${DB_PROD_NAME}
+        - export DB_USERNAME=${DB_PROD_USER}
+        - export DB_PASSWORD=${DB_PROD_PASSWORD}
+        - zip -r ${CI_COMMIT_SHORT_SHA}.zip target
+        - scp -r -o StrictHostKeyChecking=no -i "${DEPLOY_SSH_KEY}" ${CI_COMMIT_SHORT_SHA}.zip "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/${CI_PROJECT_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}.zip"
+    only:
+        - release
+
